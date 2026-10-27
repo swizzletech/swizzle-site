@@ -257,17 +257,19 @@ const jsonLd = {
   <footer class="foot">
     <div class="wrap foot-row">
       <div class="foot-brand"><span class="foot-head"><Fragment set:html={ART.head} /></span><p>Swizzle runs what your agents write.<br />Made with a stick and a lot of stirring.</p></div>
+      <div class="foot-nav">
       <ul class="links" role="list">
         <li><a href={DOCS}>Docs</a></li>
         <li><a href={`${REPO}/blob/main/CHANGELOG.md`}>Changelog</a></li>
         <li><a href={`${REPO}/blob/main/SECURITY.md`}>Security</a></li>
         <li><a href={REPO}>GitHub</a></li>
       </ul>
+      <ul class="links legal-links" role="list">
+        <li><a href={path("/impressum/")}>Impressum</a></li>
+        <li><a href={path("/datenschutz/")}>Datenschutz</a></li>
+      </ul>
+      </div>
     </div>
-    <ul class="wrap links legal-links" role="list">
-      <li><a href={path("/impressum/")}>Impressum</a></li>
-      <li><a href={path("/datenschutz/")}>Datenschutz</a></li>
-    </ul>
     <p class="giant" aria-hidden="true">swizzle</p>
   </footer>
 
