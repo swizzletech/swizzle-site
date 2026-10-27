@@ -1,0 +1,278 @@
+---
+// The landing page. Every word and illustration is in the HTML at build time; src/scripts/page.js adds
+// the motion: the typing terminal, the shader suns, the page band drawn by the scroll and the run on the track.
+// Claims about the product follow Swizzle 1.0 (README, CHANGELOG and docs/ of swizzletech/swizzle).
+import { Code } from "astro:components";
+import Base from "../layouts/Base.astro";
+import { ART, pattern } from "../art/art.js";
+import { icon } from "../art/icons.js";
+import { codeTheme } from "../styles/code-theme";
+import { path } from "../path";
+
+const REPO = "https://github.com/swizzletech/swizzle";
+const DOCS = `${REPO}/tree/main/docs`;
+const INSTALL = "npm install --global @swizzletech/cli";
+
+const heroTiles = [
+  ["cron", "Cron"], ["webhooks", "Webhooks"], ["secrets", "Secrets"],
+  ["sandboxes", "Sandboxes"], ["retries", "Retries"], ["logs", "Logs"],
+];
+
+const config = `name: invoice-chaser
+version: "1.0.0"
+entrypoint: main.ts
+trigger:
+  type: cron
+  schedule: "0 9 * * MON"
+secrets: [STRIPE_API_KEY, SLACK_WEBHOOK_URL]
+runtime:
+  retry: { max_attempts: 3, backoff: exponential }
+api_check: { mode: passive }`;
+
+const main = `// Every Monday, nudge customers with open invoices.
+import { logStep, runAutomation, runStep } from "./swizzle-sdk.ts";
+import { nudge, openInvoices } from "./billing.ts";
+
+await runAutomation(async () => {
+  const invoices = await runStep("open-invoices", openInvoices);
+
+  for (const inv of invoices) {
+    // a retry skips the nudges that already went out
+    await runStep(\`nudge:\${inv.id}\`, () => nudge(inv));
+  }
+  logStep("chased invoices", { count: invoices.length });
+  return { chased: invoices.length };
+});`;
+
+const steps = [
+  { tone: "s-mustard", art: "termi", bubble: "{ts}", title: "Your agent writes the automation.", cmd: "swizzle workspace init",
+    text: "Claude Code, Codex or any agent that can write a file. The workspace comes with an AGENTS.md and a builder skill, so the agent knows the SDK, the config and the checks. Python, JavaScript or TypeScript." },
+  { tone: "s-coral", art: "glass", title: "Swizzle checks it and deploys it.", cmd: "swizzle apply",
+    text: "Validate runs every deploy check without changing anything. Apply creates a numbered deployment, binds its secrets and connections, and switches the trigger on. A rollback is one command." },
+  { tone: "s-oxblood", art: "moon", title: "It runs. You sleep.", cmd: "swizzle logs",
+    text: "Every run in a locked-down container, retried with backoff, logged step by step. When a run finally fails, Telegram tells you, and Hand to agent turns it into a brief for the fix." },
+];
+
+const legend = [
+  ["Trigger", "A cron schedule or an interval, a signed webhook, the result of another automation, or a manual run."],
+  ["Sandbox", "An unprivileged process in a restricted Docker container, with a time limit and resource limits."],
+  ["Secrets", "Encrypted at rest and injected as environment variables. Never in the repo or the prompt, and redacted from the logs."],
+  ["Retry loop", "Fixed or exponential backoff up to your limit. Finished steps return their stored result instead of running again."],
+  ["Done", "Result, logs and step timings for every run. A run that runs out of attempts lands in the dead letters and messages you."],
+];
+
+const tiles = [
+  { p: "secrets", title: "Secrets", code: "secrets: [STRIPE_API_KEY]",
+    text: "Encrypted at rest, write-only through the API, redacted from every log and result." },
+  { p: "oauth", title: "OAuth", code: "connections: [google]",
+    text: "Google, Microsoft, GitHub, ClickUp or any OAuth2 provider. Swizzle refreshes the token, the run gets a fresh one." },
+  { p: "cron", title: "Cron", code: 'schedule: "0 9 * * MON"',
+    text: "Cron expressions or plain intervals like 5m. An overlapping tick is skipped or queued, your choice." },
+  { p: "webhooks", title: "Webhooks", code: "type: webhook",
+    text: "A path with a random token, an HMAC signature check and a JSON Schema, all before your code runs." },
+  { p: "sandboxes", title: "Sandboxes", code: "timeout: 5m",
+    text: "Each deployed run in a restricted container as an unprivileged user, with resource limits." },
+  { p: "retries", title: "Retries", code: 'runStep("charge", …)',
+    text: "Backoff, dead letters and durable steps. A retry never repeats work that already finished." },
+  { p: "api", title: "Approvals", code: 'requestApproval("refund")',
+    text: "Pause for a person, an event or a date. The run gives its worker back and resumes where it stopped." },
+  { p: "logs", title: "Deployments", code: "swizzle rollback",
+    text: "Every apply is a numbered deployment with its own logs. Staging and production stay apart." },
+];
+
+const title = "Swizzle · Agents write it. Swizzle runs it.";
+const description =
+  "Swizzle is an open source, self-hosted runtime for automations written as ordinary code. Your agent writes Python or TypeScript; Swizzle adds triggers, secrets, OAuth, retries, approvals and logs.";
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Swizzle",
+  description,
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Linux, macOS, Windows (Docker)",
+  license: "https://www.apache.org/licenses/LICENSE-2.0",
+  softwareVersion: "1.0.0",
+  codeRepository: REPO,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+};
+---
+<Base title={title} description={description}>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <header class="nav">
+    <a class="logo" href="#top" aria-label="Swizzle home"><span class="logo-head"><Fragment set:html={ART.head} /></span><span class="logo-word">swizzle</span></a>
+    <nav aria-label="Main">
+      <a href="#code">Code</a>
+      <a href="#track">The track</a>
+      <a href="#runtime">Runtime</a>
+      <a href={DOCS}>Docs</a>
+    </nav>
+    <a class="btn small" href={REPO}>GitHub</a>
+  </header>
+
+  <main id="top">
+    <svg class="rail" aria-hidden="true"></svg>
+    <div class="rail-head" aria-hidden="true"><Fragment set:html={ART.head} /></div>
+
+    <!-- HERO: one framed card (text | stage, runtime tiles, live status bar) -->
+    <section class="hero dark">
+      <div class="card">
+        <div class="card-copy">
+          <h1><span>Agents write it.</span> <span class="stripe"><span class="brand">Swizzle</span><br />runs it.</span></h1>
+          <p class="lede">A self-hosted runtime for automations written as ordinary code. Your agent writes the Python or TypeScript. Swizzle brings triggers, secrets, OAuth, retries, approvals and logs. No canvas, no nodes, no pager at 3 a.m.</p>
+          <div class="cta-row">
+            <a class="btn" href="#start">Get started <span class="arrow">→</span></a>
+            <button class="init" data-copy={INSTALL}><span class="prompt">$</span> npm i -g @swizzletech/cli <span class="copy-label">copy</span></button>
+          </div>
+        </div>
+
+        <div class="stage">
+          <div class="sun" data-shader="sun"></div>
+          <div class="machine">
+            <div class="machine-art"><Fragment set:html={ART.computer} /></div>
+            <div class="crt" aria-label="An agent session on the Swizzle 76 terminal" role="img">
+              <div class="crt-text"></div>
+            </div>
+          </div>
+          <div class="swiz"><Fragment set:html={ART.swiz} /></div>
+        </div>
+
+        <ul class="tiles-row" role="list">
+          {heroTiles.map(([key, label]) => (
+            <li class="ht" data-tile={key}><span class="ico"><Fragment set:html={icon(key)} /></span><span class="chip">{label}</span></li>
+          ))}
+        </ul>
+
+        <div class="status" aria-live="off">
+          <p class="status-cmd"><span class="prompt">$</span> <span class="cmd">swizzle apply automations/invoice-chaser</span></p>
+          <div class="status-chips"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MARQUEE -->
+    <div class="marquees" aria-hidden="true">
+      <div class="mq mq-back"><div class="mq-track"></div></div>
+      <div class="mq mq-front"><div class="mq-track"></div></div>
+    </div>
+
+    <!-- CODE -->
+    <section class="code light" id="code">
+      <div class="wrap code-grid">
+        <div class="code-copy">
+          <h2>Code, <em>not spaghetti.</em></h2>
+          <p class="sub">Node editors were built for humans holding a mouse. Your agent has no mouse. It has a compiler, a test runner and git, and it is very good with them.</p>
+          <ul class="facts">
+            <li><b>Review it like a PR.</b> A diff, not a screenshot of boxes.</li>
+            <li><b>Real languages, real libraries.</b> Python, JavaScript or TypeScript, with the packages you already use.</li>
+            <li><b>Lives in git.</b> Branch it, revert it, blame it.</li>
+          </ul>
+        </div>
+        <div class="code-art">
+          <figure class="window">
+            <header><span class="dots"><i></i><i></i><i></i></span><span class="file">automations/invoice-chaser</span><span class="chip">written by agent</span></header>
+            <p class="file-label">config.yaml</p>
+            <Code code={config} lang="yaml" theme={codeTheme} />
+            <p class="file-label">main.ts</p>
+            <Code code={main} lang="ts" theme={codeTheme} />
+          </figure>
+          <figure class="spaghetti">
+            <svg viewBox="0 0 260 170" aria-hidden="true">
+              <g stroke="#2A1712" stroke-width="3" fill="none" stroke-linecap="round">
+                <path d="M40 40 C120 10 90 140 180 120 S 230 30 120 70 S 30 150 200 40" />
+                <path d="M60 130 C140 160 160 20 220 90 S 80 20 50 90" />
+                <path d="M30 70 C90 90 200 150 230 130" />
+              </g>
+              <rect x="18" y="26" width="46" height="22" rx="6" fill="#F2AE3D" stroke="#2A1712" stroke-width="3" />
+              <rect x="190" y="28" width="46" height="22" rx="6" fill="#FF8B61" stroke="#2A1712" stroke-width="3" />
+              <rect x="34" y="118" width="46" height="22" rx="6" fill="#FEFEEF" stroke="#2A1712" stroke-width="3" />
+              <rect x="180" y="112" width="46" height="22" rx="6" fill="#C24E28" stroke="#2A1712" stroke-width="3" />
+              <circle cx="130" cy="85" r="70" fill="none" stroke="#C24E28" stroke-width="12" />
+              <path d="M80 35 L180 135" stroke="#C24E28" stroke-width="12" />
+            </svg>
+            <figcaption>47 boxes, 112 wires, one webhook. Nobody can review this.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ONE, TWO, STIR -->
+    <section class="stir peach">
+      <div class="wrap">
+        <h2>One, two, <em>stir.</em></h2>
+        <p class="sub">Three moves from an idea in a chat to an automation that runs every Monday at nine.</p>
+        <ol class="steps">
+          {steps.map((s, i) => (
+            <li class={`step ${s.tone}`}>
+              <div class="step-art"><span class="num">{i + 1}</span>{s.bubble && <span class="bubble">{s.bubble}</span>}<div data-art={s.art}><Fragment set:html={ART[s.art as keyof typeof ART]} /></div></div>
+              <div class="step-body"><h3>{s.title}</h3><p>{s.text}</p><code>{s.cmd}</code></div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <!-- THE TRACK -->
+    <section class="track dark" id="track">
+      <div class="wrap">
+        <h2>Every run takes <em>the same track.</em></h2>
+        <p class="sub">Trigger, sandbox, secrets, your code, done. When a call fails, the run loops back and tries again with backoff. Every lap is in the log, for you and for your agent.</p>
+      </div>
+      <div class="track-stage" data-rail="track">
+        <div class="stations"></div>
+        <div class="readout" role="status" aria-live="polite"><span class="ro-tag">RUN 4812</span><span class="ro-text">waiting for cue</span></div>
+      </div>
+      <div class="wrap legend">
+        {legend.map(([name, text]) => <div><b>{name}</b><span>{text}</span></div>)}
+      </div>
+    </section>
+
+    <!-- RUNTIME -->
+    <section class="runtime light" id="runtime">
+      <div class="wrap">
+        <h2>Everything <em>around the code.</em></h2>
+        <p class="sub">Your agent writes the interesting part. Swizzle handles the parts that make automations fail at 3 a.m.</p>
+        <div class="tiles">
+          {tiles.map((t) => (
+            <article class="tile"><div class="pat"><Fragment set:html={pattern(t.p)} /></div><h3>{t.title}</h3><p>{t.text}</p><code>{t.code}</code></article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="finale dark" id="start">
+      <div class="finale-sun" data-shader="finale" data-rail="end"></div>
+      <div class="wrap finale-copy">
+        <h2>Hand your agent <em>the keys.</em></h2>
+        <p class="sub">Swizzle is open source under Apache 2.0. One Docker Compose stack on your laptop, a home server or a VPS. Your code, your data and your secrets stay on your machine.</p>
+        <div class="cta-row">
+          <a class="btn" href={REPO}>Get started on GitHub <span class="arrow">→</span></a>
+          <button class="init" data-copy={INSTALL}><span class="prompt">$</span> npm i -g @swizzletech/cli <span class="copy-label">copy</span></button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-row">
+      <div class="foot-brand"><span class="foot-head"><Fragment set:html={ART.head} /></span><p>Swizzle runs what your agents write.<br />Made with a stick and a lot of stirring.</p></div>
+      <ul class="links" role="list">
+        <li><a href={DOCS}>Docs</a></li>
+        <li><a href={`${REPO}/blob/main/CHANGELOG.md`}>Changelog</a></li>
+        <li><a href={`${REPO}/blob/main/SECURITY.md`}>Security</a></li>
+        <li><a href={REPO}>GitHub</a></li>
+      </ul>
+    </div>
+    <ul class="wrap links legal-links" role="list">
+      <li><a href={path("/impressum/")}>Impressum</a></li>
+      <li><a href={path("/datenschutz/")}>Datenschutz</a></li>
+    </ul>
+    <p class="giant" aria-hidden="true">swizzle</p>
+  </footer>
+
+  <div class="grain" aria-hidden="true"></div>
+  <script>
+    import "../scripts/page.js";
+  </script>
+</Base>

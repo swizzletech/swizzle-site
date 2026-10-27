@@ -1,0 +1,28 @@
+---
+// The shell of the legal pages: German, plain text on espresso, the logo leads back home.
+import Base from "./Base.astro";
+import { ART } from "../art/art.js";
+import { path } from "../path";
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+---
+<Base title={`${title} · Swizzle`} description={description} lang="de">
+  <header class="nav legal-nav">
+    <a class="logo" href={path("/")} aria-label="Swizzle Startseite"><span class="logo-head"><Fragment set:html={ART.head} /></span><span class="logo-word">swizzle</span></a>
+  </header>
+  <main class="legal">
+    <h1>{title}</h1>
+    <slot />
+  </main>
+  <footer class="legal-foot">
+    <ul class="links" role="list">
+      <li><a href={path("/")}>Startseite</a></li>
+      <li><a href={path("/impressum/")}>Impressum</a></li>
+      <li><a href={path("/datenschutz/")}>Datenschutz</a></li>
+    </ul>
+  </footer>
+</Base>

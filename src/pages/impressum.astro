@@ -1,0 +1,15 @@
+---
+// Impressum: the information § 5 DDG requires, nothing more.
+import Legal from "../layouts/Legal.astro";
+import { provider } from "../legal";
+---
+<Legal title="Impressum" description="Anbieterkennzeichnung der Swizzle-Website nach § 5 DDG.">
+  <h2>Angaben gemäß § 5 DDG</h2>
+  <p>{provider.name}<br />{provider.address.map((line) => <>{line}<br /></>)}</p>
+
+  <h2>Kontakt</h2>
+  <p>
+    Telefon: <a href={`tel:${provider.phone.replaceAll(" ", "")}`}>{provider.phone}</a><br />
+    E-Mail: <a href={`mailto:${provider.email}`}>{provider.email}</a>
+  </p>
+</Legal>

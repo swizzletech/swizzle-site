@@ -1,0 +1,45 @@
+---
+// The document shell: meta tags for search and link previews, self-hosted fonts, the global stylesheet.
+// Fonts ship from this site (Fontsource), so no visitor request goes to Google.
+import "@fontsource-variable/archivo/wdth.css";
+import "@fontsource-variable/archivo/wdth-italic.css";
+import "@fontsource/bagel-fat-one/latin-400.css";
+import "@fontsource-variable/jetbrains-mono/wght.css";
+import "@fontsource/vt323/400.css";
+import "../styles/site.css";
+import { path } from "../path";
+
+interface Props {
+  title: string;
+  description: string;
+  lang?: "en" | "de";
+}
+const { title, description, lang = "en" } = Astro.props;
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+const image = Astro.site ? new URL(path("/og.png"), Astro.site).href : undefined;
+---
+<!doctype html>
+<html lang={lang}>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  {canonical && <link rel="canonical" href={canonical} />}
+  <link rel="icon" href={path("/favicon.svg")} type="image/svg+xml" />
+  <meta name="theme-color" content="#1f0d0e" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Swizzle" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  {canonical && <meta property="og:url" content={canonical} />}
+  {image && <meta property="og:image" content={image} />}
+  {image && <meta property="og:image:width" content="1200" />}
+  {image && <meta property="og:image:height" content="630" />}
+  <meta name="twitter:card" content="summary_large_image" />
+  <slot name="head" />
+</head>
+<body>
+  <slot />
+</body>
+</html>
