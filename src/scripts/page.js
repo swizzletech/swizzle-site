@@ -83,7 +83,10 @@ const SESSIONS = [
     ],
   },
 ];
-const chips = $(".status-chips"), statusCmd = $(".status .cmd");
+const status = $(".status"), chips = $(".status-chips"), statusCmd = $(".status .cmd");
+const chipHtml = (fx) =>
+  (fx.chip ? `<span class="sc${fx.warn ? " warn" : ""}">${fx.warn ? "↻" : "✓"} ${fx.chip}</span>` : "") +
+  (fx.live ? `<span class="live">${fx.live}</span>` : "");
 function cardEffect(fx) {
   if (!fx) return;
   for (const t of fx.tiles || []) {
@@ -91,9 +94,31 @@ function cardEffect(fx) {
     el.classList.remove("on"); void el.offsetWidth; el.classList.add("on");
     clearTimeout(el._off); el._off = setTimeout(() => el.classList.remove("on"), 1400);
   }
-  if (fx.chip) chips.insertAdjacentHTML("beforeend", `<span class="sc${fx.warn ? " warn" : ""}">${fx.warn ? "↻" : "✓"} ${fx.chip}</span>`);
-  if (fx.live) chips.insertAdjacentHTML("beforeend", `<span class="live">${fx.live}</span>`);
+  chips.insertAdjacentHTML("beforeend", chipHtml(fx));
 }
+// The chips wrap on narrow screens, so the bar would grow while a session plays and shift the page below.
+// Reserve the height of the tallest finished session, measured on a hidden copy of the bar at its current width.
+function reserveStatus() {
+  const probe = status.cloneNode(true);
+  probe.style.cssText = `position:absolute;left:0;top:0;visibility:hidden;width:${status.offsetWidth}px`;
+  probe.setAttribute("aria-hidden", "true");
+  status.after(probe);
+  let tallest = 0;
+  for (const s of SESSIONS) {
+    $(".cmd", probe).textContent = s.cmd;
+    $(".status-chips", probe).innerHTML = s.lines.map(([, , fx]) => (fx ? chipHtml(fx) : "")).join("");
+    tallest = Math.max(tallest, probe.offsetHeight);
+  }
+  probe.remove();
+  status.style.minHeight = `${tallest}px`;
+}
+let statusWidth = 0;
+new ResizeObserver(() => {
+  if (status.offsetWidth === statusWidth) return;
+  statusWidth = status.offsetWidth;
+  reserveStatus();
+}).observe(status);
+document.fonts.ready.then(reserveStatus);
 const crt = $(".crt-text"), vfd = $("#vfd-text"), machine = $(".machine");
 $(".crt").insertAdjacentHTML("beforeend", '<div class="roll"></div>');
 

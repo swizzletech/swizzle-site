@@ -275,7 +275,7 @@ h1 .brand { display: inline; font: 400 1.12em/1 "Bagel Fat One", var(--display);
   .tiles-row { grid-template-columns: repeat(3, 1fr); }
   .ht { height: 124px; }
   .ht .chip { left: 8px; bottom: 8px; font-size: 10px; padding: 4px 6px 3px; }
-  .status { justify-content: flex-start; }
+  .status { justify-content: flex-start; align-content: flex-start; }
   .status-chips { justify-content: flex-start; }
 }
 
